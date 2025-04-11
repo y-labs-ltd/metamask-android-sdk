@@ -102,7 +102,7 @@ class EthereumTests {
 
     @Test
     fun testEthereumConnect() {
-        val testResult: Result = Result.Success.Item("0x123456")
+        val testResult: Result = Result.Success("0x123456")
         var callbackResult: Result? = null
 
         prepareCommunicationClient()
@@ -172,7 +172,7 @@ class EthereumTests {
         }
 
         val requestId = findRequestIdForAccountRequest(EthereumMethod.METAMASK_CONNECT_WITH)
-        val testResult: Result = Result.Success.Item("0x24680")
+        val testResult: Result = Result.Success("0x24680")
         communicationClient.completeRequest(requestId, testResult)
 
         assertTrue(callbackResult is Result.Success)
@@ -196,7 +196,7 @@ class EthereumTests {
         }
     
         val requestId = findRequestIdForAccountRequest(EthereumMethod.METAMASK_CONNECT_SIGN)
-        val testResult: Result = Result.Success.Item("0xdhjdheeeeeew")
+        val testResult: Result = Result.Success("0xdhjdheeeeeew")
         communicationClient.completeRequest(requestId, testResult)
     
         // Assertions to verify the correct handling
@@ -251,7 +251,7 @@ class EthereumTests {
         ethereum.sendRequest(request) { result ->
             assertTrue(result is Result.Success)
             when (result) {
-                is Result.Success.Item -> {
+                is Result.Success -> {
                     assertEquals(mockResponse, result.value)
                 }
                 else -> {

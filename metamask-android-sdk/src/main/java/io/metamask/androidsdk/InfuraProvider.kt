@@ -24,16 +24,16 @@ open class InfuraProvider(private val infuraAPIKey: String?, readonlyRPCMap: Map
             // ###### Ethereum ######
             // Mainnet
             "0x1" to "https://mainnet.infura.io/v3/${infuraAPIKey}",
-    
+
             // Sepolia 11155111
             "0x2a" to "https://sepolia.infura.io/v3/${infuraAPIKey}",
-    
+
             // ###### Linear ######
             // Mainnet
             "0xe708" to "https://linea-mainnet.infura.io/v3/${infuraAPIKey}",
             // Goerli Testnet
             "0xe704" to "https://linea-goerli.infura.io/v3/${infuraAPIKey}",
-    
+
             // ###### Polygon ######
             // Mainnet
             "0x89" to "https://polygon-mainnet.infura.io/v3/${infuraAPIKey}",
@@ -84,7 +84,7 @@ open class InfuraProvider(private val infuraAPIKey: String?, readonlyRPCMap: Map
         )
     }
 
-    open fun makeRequest(request: RpcRequest, chainId: String, dappMetadata: DappMetadata, callback: ((Result) -> Unit)?) {
+    open fun makeRequest(request: RpcRequest, chainId: String, dappMetadata: DappMetadata, callback: ((Result<String>) -> Unit)?) {
         val httpClient = HttpClient()
 
         val devicePlatformInfo = DeviceInfo.platformDescription
@@ -104,13 +104,13 @@ open class InfuraProvider(private val infuraAPIKey: String?, readonlyRPCMap: Map
                 logger.log("InfuraProvider:: response $response")
                 try {
                     val result = JSONObject(response).optString("result") ?: ""
-                    callback?.invoke(Result.Success.Item(result))
+                    callback?.invoke(Result.Success(result))
                 } catch (e: Exception) {
                     logger.error("InfuraProvider:: error: ${e.message}")
                     callback?.invoke(Result.Error(RequestError(-1, response)))
                 }
             } else if (ioException != null) {
-                callback?.invoke(Result.Success.Item(ioException.message ?: ""))
+                callback?.invoke(Result.Success(ioException.message ?: ""))
             }
         }
     }

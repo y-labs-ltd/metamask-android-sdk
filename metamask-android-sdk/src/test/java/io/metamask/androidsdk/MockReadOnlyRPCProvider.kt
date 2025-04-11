@@ -5,7 +5,7 @@ class MockReadOnlyRPCProvider(private val infuraAPIKey: String, private val read
 
     override fun makeRequest(request: RpcRequest, chainId: String, dappMetadata: DappMetadata, callback: ((Result) -> Unit)?) {
         if (mockResponse != null) {
-            callback?.invoke(Result.Success.Item(mockResponse!!))
+            callback?.invoke(Result.Success(mockResponse!!))
         } else {
             callback?.invoke(Result.Error(RequestError(-1, "No response set in MockInfuraProvider")))
         }
