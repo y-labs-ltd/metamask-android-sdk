@@ -2,7 +2,7 @@ package io.metamask.androidsdk
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
+import androidx.core.net.toUri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import kotlinx.coroutines.Dispatchers
@@ -11,7 +11,7 @@ import kotlinx.coroutines.withContext
 import java.lang.ref.WeakReference
 
 private const val METAMASK_DEEPLINK = "https://metamask.app.link"
-private const val METAMASK_BIND_DEEPLINK = "$METAMASK_DEEPLINK/bind"
+const val METAMASK_BIND_DEEPLINK = "$METAMASK_DEEPLINK/bind"
 
 class Ethereum (
     private val context: Context,
@@ -391,9 +391,9 @@ class Ethereum (
     }
 
     private fun openMetaMask() {
-        val deeplinkUrl = METAMASK_BIND_DEEPLINK
+        val deeplinkUrl = dappMetadata.deeplink
 
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(deeplinkUrl))
+        val intent = Intent(Intent.ACTION_VIEW, deeplinkUrl.toUri())
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(intent)
     }
