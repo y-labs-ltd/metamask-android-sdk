@@ -2,7 +2,7 @@ package io.metamask.androidsdk
 
 import org.json.JSONObject
 
-open class InfuraProvider(private val infuraAPIKey: String?, readonlyRPCMap: Map<String, String>?, private val logger: Logger = DefaultLogger) {
+open class ReadOnlyRPCProvider(private val infuraAPIKey: String?, private val readonlyRPCMap: Map<String, String>?, private val logger: Logger = DefaultLogger) {
     val rpcUrls: Map<String, String> = when {
         readonlyRPCMap != null && infuraAPIKey != null -> {
             // Merge infuraReadonlyRPCMap with readonlyRPCMap, overriding infura's keys if they are present in readonlyRPCMap
@@ -16,7 +16,9 @@ open class InfuraProvider(private val infuraAPIKey: String?, readonlyRPCMap: Map
     }
 
     fun supportsChain(chainId: String): Boolean {
-        return !rpcUrls[chainId].isNullOrEmpty()
+        val apiKey = infuraAPIKey ?: ""
+        val readonlyMap = readonlyRPCMap ?: mapOf()
+        return !rpcUrls[chainId].isNullOrEmpty() && (readonlyMap.containsKey(chainId) || apiKey.isNotEmpty())
     }
 
     fun infuraReadonlyRPCMap(infuraAPIKey: String) : Map<String, String> {
@@ -24,16 +26,16 @@ open class InfuraProvider(private val infuraAPIKey: String?, readonlyRPCMap: Map
             // ###### Ethereum ######
             // Mainnet
             "0x1" to "https://mainnet.infura.io/v3/${infuraAPIKey}",
-
+    
             // Sepolia 11155111
             "0x2a" to "https://sepolia.infura.io/v3/${infuraAPIKey}",
-
+    
             // ###### Linear ######
             // Mainnet
             "0xe708" to "https://linea-mainnet.infura.io/v3/${infuraAPIKey}",
             // Goerli Testnet
             "0xe704" to "https://linea-goerli.infura.io/v3/${infuraAPIKey}",
-
+    
             // ###### Polygon ######
             // Mainnet
             "0x89" to "https://polygon-mainnet.infura.io/v3/${infuraAPIKey}",
@@ -84,7 +86,7 @@ open class InfuraProvider(private val infuraAPIKey: String?, readonlyRPCMap: Map
         )
     }
 
-    open fun makeRequest(request: RpcRequest, chainId: String, dappMetadata: DappMetadata, callback: ((Result<String>) -> Unit)?) {
+    open fun makeRequest(request: RpcRequest, chainId: String, dappMetadata: DappMetadata, callback: ((Result) -> Unit)?) {
         val httpClient = HttpClient()
 
         val devicePlatformInfo = DeviceInfo.platformDescription
@@ -99,18 +101,24 @@ open class InfuraProvider(private val infuraAPIKey: String?, readonlyRPCMap: Map
         params["id"] = request.id
         params["params"] = request.params ?: listOf<String>()
 
-        httpClient.newCall("${rpcUrls[chainId]}", parameters = params) { response, ioException ->
+        val endpoint = rpcUrls[chainId]
+        if (endpoint == null) {
+            callback?.invoke(Result.Error(RequestError(-1, "There is no defined network for chainId $chainId, please provide it via readonlyRPCMap")))
+            return
+        }
+
+        httpClient.newCall(endpoint, parameters = params) { response, ioException ->
             if (response != null) {
                 logger.log("InfuraProvider:: response $response")
                 try {
                     val result = JSONObject(response).optString("result") ?: ""
-                    callback?.invoke(Result.Success(result))
+                    callback?.invoke(Result.Success.Item(result))
                 } catch (e: Exception) {
                     logger.error("InfuraProvider:: error: ${e.message}")
                     callback?.invoke(Result.Error(RequestError(-1, response)))
                 }
             } else if (ioException != null) {
-                callback?.invoke(Result.Success(ioException.message ?: ""))
+                callback?.invoke(Result.Success.Item(ioException.message ?: ""))
             }
         }
     }

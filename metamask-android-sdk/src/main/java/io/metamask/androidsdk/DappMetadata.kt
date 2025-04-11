@@ -8,8 +8,9 @@ data class DappMetadata(
     val name: String,
     val url: String,
     val iconUrl: String? = null,
-    val base64Icon: String? = null
-    ) {
+    val base64Icon: String? = null,
+    val deeplink: String = METAMASK_BIND_DEEPLINK
+) {
     fun hasValidUrl(): Boolean {
         return try {
             val url = URL(url)

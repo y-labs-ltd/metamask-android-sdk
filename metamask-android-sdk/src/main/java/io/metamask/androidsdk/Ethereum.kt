@@ -2,20 +2,17 @@ package io.metamask.androidsdk
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
+import androidx.core.net.toUri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.lang.ref.WeakReference
 import kotlin.collections.listOf
 
 private const val METAMASK_DEEPLINK = "https://metamask.app.link"
-private const val METAMASK_BIND_DEEPLINK = "$METAMASK_DEEPLINK/bind"
+const val METAMASK_BIND_DEEPLINK = "$METAMASK_DEEPLINK/bind"
 
 class Ethereum (
     private val context: Context,
@@ -23,9 +20,13 @@ class Ethereum (
     sdkOptions: SDKOptions? = null,
     private val logger: Logger = DefaultLogger,
     private val communicationClientModule: CommunicationClientModuleInterface = CommunicationClientModule(context),
-    private val infuraProvider: InfuraProvider? = sdkOptions?.let {
-        if (it.infuraAPIKey.isNotEmpty()) {
-            InfuraProvider(it.infuraAPIKey)
+    private val readOnlyRPCProvider: ReadOnlyRPCProvider? = sdkOptions?.let { options ->
+        val infuraAPIKey: String? = options.infuraAPIKey
+        val readonlyRPCMap: Map<String, String>? = options.readonlyRPCMap
+    
+        // Only create ReadOnlyRPCProvider if either infuraAPIKey or readonlyRPCMap is provided
+        if (infuraAPIKey != null || readonlyRPCMap != null) {
+            ReadOnlyRPCProvider(infuraAPIKey, readonlyRPCMap)
         } else {
             null
         }
@@ -387,9 +388,9 @@ class Ethereum (
             return
         }
 
-        if (EthereumMethod.isReadOnly(request.method) && infuraProvider?.supportsChain(chainId) == true) {
+        if (EthereumMethod.isReadOnly(request.method) && readOnlyRPCProvider?.supportsChain(chainId) == true) {
             logger.log("Ethereum:: Using Infura API for method ${request.method} on chain $chainId")
-            infuraProvider.makeRequest(request, chainId, dappMetadata, callback)
+            readOnlyRPCProvider.makeRequest(request, chainId, dappMetadata, callback)
         } else {
             communicationClient?.sendRequest(request) { response ->
                 callback?.invoke(response)
@@ -431,9 +432,9 @@ class Ethereum (
     }
 
     private fun openMetaMask() {
-        val deeplinkUrl = METAMASK_BIND_DEEPLINK
+        val deeplinkUrl = dappMetadata.deeplink
 
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(deeplinkUrl))
+        val intent = Intent(Intent.ACTION_VIEW, deeplinkUrl.toUri())
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(intent)
     }
