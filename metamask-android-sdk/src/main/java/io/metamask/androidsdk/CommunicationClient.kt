@@ -335,7 +335,7 @@ class CommunicationClient(
         }
 
         val requestId: String = id.ifEmpty {
-            queuedRequests.entries.find { it.value.request.method == EthereumMethod.ETH_REQUEST_ACCOUNTS.value }?.key ?: ""
+            queuedRequests.entries.firstOrNull()?.key ?: ""
         }
 
         val errorMap: Map<String, Any?> = Gson().fromJson(error, object : TypeToken<Map<String, Any?>>() {}.type)
